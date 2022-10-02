@@ -53,7 +53,7 @@ class CurrencyUsedInLocale {
     }
 }
 
-open class CurrencySymbolListBase {
+open class CurrencyFormatTestBase {
     enum class SymbolPos {
         Prefix,
         Suffix,
@@ -93,7 +93,7 @@ open class CurrencySymbolListBase {
     }
 }
 
-class CurrencySymbolsList : CurrencySymbolListBase() {
+class CurrencyFormatTest : CurrencyFormatTestBase() {
     @Test
     fun listAllSymbols() {
         val allLocales = Locale.getAvailableLocales()
@@ -137,7 +137,7 @@ class CurrencySymbolsList : CurrencySymbolListBase() {
     }
 }
 
-class CurrencyCheckSymbolPositionByLang_WarnThisIsHeavy : CurrencySymbolListBase() {
+class CurrencyCheckSymbolPositionByLang_WarnThisIsHeavy : CurrencyFormatTestBase() {
     @Test
     fun checkPosition() {
         val allLocales = Locale.getAvailableLocales()
@@ -185,7 +185,7 @@ class CurrencyCheckSymbolPositionByLang_WarnThisIsHeavy : CurrencySymbolListBase
     }
 }
 
-class CurrencyCheckSymbolPositionByLang_Summary : CurrencySymbolListBase() {
+class CurrencyCheckSymbolPositionByLang_Summary : CurrencyFormatTestBase() {
     @Test
     fun checkPosition() {
         val allLocales = Locale.getAvailableLocales()
