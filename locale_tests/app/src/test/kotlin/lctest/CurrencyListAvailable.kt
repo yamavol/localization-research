@@ -3,7 +3,6 @@ package lctest
 import org.junit.Test
 import java.text.NumberFormat
 import java.util.*
-import javax.swing.text.NumberFormatter
 
 class CurrencyListAvailable {
     @Test
@@ -54,9 +53,190 @@ class CurrencyUsedInLocale {
     }
 }
 
-class CurrencySymbolsList {
+open class CurrencySymbolListBase {
+    enum class SymbolPos {
+        Prefix,
+        Suffix,
+        Undefined,
+    }
+
+    data class SymbolInfo(
+        val locale: Locale,
+        val currency: Currency,
+        val symbol: String,
+        val position: SymbolPos,
+        val example: String,
+    )
+
+    fun getSymbolInfo(currency: Currency, locale: Locale): SymbolInfo {
+        val decimal = 12345678.990
+        val currencyFormatter = NumberFormat.getCurrencyInstance(locale)
+        currencyFormatter.currency = currency
+        val symbol = currency.getSymbol(locale)
+        val formatText = currencyFormatter.format(decimal)
+
+        val symbolPos =
+            if (formatText.startsWith(symbol))
+                SymbolPos.Prefix
+            else if (formatText.endsWith(symbol))
+                SymbolPos.Suffix
+            else
+                SymbolPos.Undefined
+
+        return SymbolInfo(
+            locale = locale,
+            currency = currency,
+            symbol = symbol,
+            position = symbolPos,
+            example = formatText,
+        )
+    }
+}
+
+class CurrencySymbolsList : CurrencySymbolListBase() {
     @Test
     fun listAllSymbols() {
+        val allLocales = Locale.getAvailableLocales()
+        val allCurrencies = Currency.getAvailableCurrencies()
+
+        // JPY, USD, ....
+        val currencyList = allCurrencies.sortedBy { it.currencyCode }
+
+        val map = mutableMapOf<String, MutableList<SymbolInfo>>()
+        for (currency in currencyList) {
+            for (locale in allLocales) {
+                val iso4127 = currency.currencyCode
+                if (map[iso4127] == null)
+                    map[iso4127] = mutableListOf()
+
+                map[iso4127]?.add(
+                    getSymbolInfo(currency, locale)
+                )
+            }
+        }
+
+        for (pair in map.toSortedMap()) {
+            val code = pair.key
+            val symbols = pair.value
+                .distinctBy { it.example }
+                .sortedBy { it.locale.toString() }
+            for (info in symbols) {
+                print(code)
+                print('\t')
+                print(info.symbol)
+                print('\t')
+                print(info.position.toString().padEnd(10))
+                print('\t')
+                print(info.example)
+                print('\t')
+                print(info.locale)
+                print('\n')
+            }
+        }
+
+    }
+}
+
+class CurrencyCheckSymbolPositionByLang_WarnThisIsHeavy : CurrencySymbolListBase() {
+    @Test
+    fun checkPosition() {
+        val allLocales = Locale.getAvailableLocales()
+        val allCurrencies = Currency.getAvailableCurrencies()
+
+        // JPY, USD, ....
+        val currencyList = allCurrencies.sortedBy { it.currencyCode }
+
+        val map = mutableMapOf<String, MutableList<SymbolInfo>>()
+        for (currency in currencyList) {
+            for (locale in allLocales) {
+                val lang = locale.language
+
+                if (map[lang] == null)
+                    map[lang] = mutableListOf()
+
+                map[lang]?.add(
+                    getSymbolInfo(currency, locale)
+                )
+            }
+        }
+
+
+        for (pair in map.toSortedMap()) {
+            val lang = pair.key
+            val symbols = pair.value
+                .distinctBy { it.example }
+                .sortedBy { it.locale.toString() }
+
+            for (info in symbols) {
+                print(lang)
+                print('\t')
+                print(info.currency.currencyCode)
+                print('\t')
+                print(info.symbol)
+                print('\t')
+                print(info.position.toString().padEnd(10))
+                print('\t')
+                print(info.example)
+                print('\t')
+                print(info.locale)
+                print('\n')
+            }
+        }
+    }
+}
+
+class CurrencyCheckSymbolPositionByLang_Summary : CurrencySymbolListBase() {
+    @Test
+    fun checkPosition() {
+        val allLocales = Locale.getAvailableLocales()
+        val allCurrencies = Currency.getAvailableCurrencies()
+
+        // JPY, USD, ....
+        val currencyList = allCurrencies.sortedBy { it.currencyCode }
+
+        val map = mutableMapOf<String, MutableList<SymbolInfo>>()
+        for (currency in currencyList) {
+            for (locale in allLocales) {
+                val lang = locale.language
+
+                if (locale.country.isBlank())
+                    continue
+
+                if (map[lang] == null)
+                    map[lang] = mutableListOf()
+
+                map[lang]?.add(
+                    getSymbolInfo(currency, locale)
+                )
+            }
+        }
+
+
+        for (pair in map.toSortedMap()) {
+            val lang = pair.key
+            val symbols = pair.value
+                .distinctBy { it.position }
+                .sortedBy { it.locale.toString() }
+
+            for (info in symbols) {
+                print(lang)
+                print('\t')
+                print(info.currency.currencyCode)
+                print('\t')
+                print(info.symbol)
+                print('\t')
+                print(info.position.toString().padEnd(10))
+                print('\t')
+                print(info.example)
+                print('\n')
+            }
+        }
+    }
+}
+
+class CurrencySymbolsListGrouped {
+    @Test
+    fun listAllSymbolsGrouped() {
         val allLocales = Locale.getAvailableLocales()
         val allCurrencies = Currency.getAvailableCurrencies()
 
@@ -89,3 +269,49 @@ class CurrencySymbolsList {
     }
 }
 
+class CurrencyUsedCountry {
+
+    @Test
+    fun checkCountryToCurrencyMapping() {
+        val allLocales = Locale.getAvailableLocales()
+
+        fun mapper(lc: Locale): Pair<Locale, String> {
+            return try {
+                lc to Currency.getInstance(lc).currencyCode
+            } catch (e: Exception) {
+                lc to "XXX"
+            }
+        }
+
+        val list = allLocales
+            .filter { lc -> lc.country.isNotEmpty() }
+            .map { lc -> mapper(lc) }
+            .groupBy { it.first.country }
+            .toList()
+            .sortedBy { it.first }
+
+
+        for (pair in list) {
+            val countryCode = pair.first
+            val items = pair.second
+
+            val locales = items.map { item -> item.first }
+            val currencies = items.map { item -> item.second }
+
+            print(countryCode)
+            print('\t')
+            print_nothrow { Currency.getInstance(countryCode).getDisplayName(Locale.ENGLISH).padEnd(40) }
+            print('\t')
+            print(locales.size)
+            print('\t')
+            print(currencies.distinct().joinToString())
+            print('\n')
+        }
+    }
+
+    class CurrencyJDKvsISO4217 {
+        val currencies = Currency.getAvailableCurrencies()
+
+    }
+
+}
