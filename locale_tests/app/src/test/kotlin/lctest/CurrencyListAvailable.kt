@@ -129,10 +129,4 @@ class CurrencyUsedCountry {
             print('\n')
         }
     }
-
-    class CurrencyJDKvsISO4217 {
-        val currencies = Currency.getAvailableCurrencies()
-
-    }
-
 }
