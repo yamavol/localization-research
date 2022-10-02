@@ -72,10 +72,6 @@ class CurrencySymbolsList {
                     map[iso4127] = mutableListOf()
 
                 map[iso4127]?.add(symbol)
-
-                if (symbol.contains("щ")) {
-                    print("${currency.currencyCode} symbol in locale: $locale is $symbol")
-                }
             }
         }
 
