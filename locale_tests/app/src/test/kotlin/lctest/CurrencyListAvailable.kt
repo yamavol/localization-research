@@ -53,7 +53,41 @@ class CurrencyUsedInLocale {
     }
 }
 
+class CurrencySymbolsList {
+    @Test
+    fun listAllSymbols() {
+        val allLocales = Locale.getAvailableLocales()
+        val allCurrencies = Currency.getAvailableCurrencies()
 
+        val currencyList = allCurrencies.sortedBy { it.currencyCode }
+
+        val map = mutableMapOf<String, MutableList<String>>()
+        for (currency in currencyList) {
+            for (locale in allLocales) {
+                val symbol = currency.getSymbol(locale)
+
+                val iso4127 = currency.currencyCode
+                if (map[iso4127] == null)
+                    map[iso4127] = mutableListOf()
+
+                map[iso4127]?.add(symbol)
+            }
+        }
+
+        for (pair in map.toSortedMap()) {
+            val code = pair.key
+            for ((lc,symbol) in pair.value.distinct().withIndex()) {
+                print(lc)
+                print('\t')
+                print(code)
+                print('\t')
+                print(symbol)
+                print('\n')
+            }
+        }
+
+    }
+}
 
 class CurrencySymbolsListGrouped {
     @Test
